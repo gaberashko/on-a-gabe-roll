@@ -1,4 +1,5 @@
-import type { MeasurementUnitData } from "./MeasurementUnit";
+import type Big from "big.js";
+import type { Ingredient } from './Ingredient';
 
 export const RECIPE_TAGS = {
     // Courses
@@ -15,23 +16,26 @@ export const RECIPE_TAGS = {
     CHEESECAKE: Symbol('Cheesecake'),
 
     CHICKEN: Symbol('Chicken')
-}
+} satisfies Record<string, symbol>
 
-export type RecipeTag = typeof RECIPE_TAGS[keyof typeof RECIPE_TAGS];
+export type RecipeTag = keyof typeof RECIPE_TAGS;
 
 
-interface Ingredient {
-    name: string,
-    quantity: number,
-    unit: MeasurementUnitData,
-    price?: number
 }
 
 class Recipe {
     private displayImage?: ImageData,
-    private measurementAdjustable?: boolean,
     private recipeTags?: RecipeTag[],
-    private
+    private measurementAdjustable?: boolean,
+    private servingAdjustable?: boolean,
+    
+    private recipeId: any,
+    private servingCount: number,
+    private cookTime: any,
+    private prepTime: any,
+    private totalTime: any,
+    private ingredients: Ingredient[],
+    private totalPrice: Big
     
     constructor() {}
 
