@@ -65,7 +65,6 @@ export const MEASUREMENT_UNITS = {
         baseValue: new Big(1),
     },
 } as const satisfies Record<string, MeasurementUnitData>;
-
 export type MeasurementUnit = (typeof MEASUREMENT_UNITS)[keyof typeof MEASUREMENT_UNITS]["label"];
 
 export class Measurement {
@@ -95,6 +94,16 @@ export class Measurement {
             .div(toUnitData.baseValue);
 
         return new Measurement(convertedMeasurement, toUnit);
+    }
+
+    /**
+     * Multiplies a measurement by factor argument and returns the new measurement.
+     *
+     * @param factor - The amount to factor the measurement value by
+     * @returns The scaled measurement.
+     */
+    public scaleBy(factor: Big): Measurement {
+        return new Measurement(this.quantity.times(factor), this.unit);
     }
 }
 
