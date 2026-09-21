@@ -19,6 +19,7 @@ interface nutritionalFacts {
 export interface Ingredient {
     name: string;
     measurement: Measurement;
+    price?: Big;
     ingredientTags?: IngredientTag[];
     nutritionalFacts?: nutritionalFacts;
 }
