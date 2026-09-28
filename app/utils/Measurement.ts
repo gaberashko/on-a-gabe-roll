@@ -4,7 +4,7 @@ export const BASE_UNITS = { VOLUME: "ml", WEIGHT: "g" } as const;
 
 interface MeasurementUnitData {
     label: string;
-    aliases: readonly string[];
+    aliases: ReadonlySet<string>;
     system: "metric" | "imperial" | "neutral";
     type: "volume" | "weight" | "count";
     baseValue: Big;
@@ -14,28 +14,28 @@ export const MEASUREMENT_UNITS = {
     // Volume Units
     tsp: {
         label: "tsp",
-        aliases: ["tsp", "teaspoon", "tsp.", "tsps", "teaspoons", "tsps."],
+        aliases: new Set(["tsp", "teaspoon", "tsp.", "tsps", "teaspoons", "tsps."]),
         system: "imperial",
         type: "volume",
         baseValue: new Big(4.92892),
     },
     tbsp: {
         label: "tbsp",
-        aliases: ["tbsp", "tablespoon", "tbsp.", "tbsps", "tablespoons", "tsps."],
+        aliases: new Set(["tbsp", "tablespoon", "tbsp.", "tbsps", "tablespoons", "tsps."]),
         system: "imperial",
         type: "volume",
         baseValue: new Big(14.7868),
     },
     cup: {
         label: "cup",
-        aliases: ["cup", "cups", "c."],
+        aliases: new Set(["cup", "cups", "c."]),
         system: "imperial",
         type: "volume",
         baseValue: new Big(236.588),
     },
     "fl oz": {
         label: "fl oz",
-        aliases: ["fl oz", "fl oz.", "fl. oz.", "fluid ounce", "fluid ounces"],
+        aliases: new Set(["fl oz", "fl oz.", "fl. oz.", "fluid ounce", "fluid ounces"]),
         system: "imperial",
         type: "volume",
         baseValue: new Big(29.5735),
@@ -43,7 +43,7 @@ export const MEASUREMENT_UNITS = {
     // (BASE_UNITS.VOLUME)
     ml: {
         label: "ml",
-        aliases: ["ml", "milliliter", "ml.", "mls", "milliliters", "mls.", "mL", "mL."],
+        aliases: new Set(["ml", "milliliter", "ml.", "mls", "milliliters", "mls.", "mL", "mL."]),
         system: "metric",
         type: "volume",
         baseValue: new Big(1),
@@ -51,7 +51,7 @@ export const MEASUREMENT_UNITS = {
     // Weight Units
     lb: {
         label: "lb",
-        aliases: ["lb", "pound", "lb.", "lbs", "pounds", "lbs."],
+        aliases: new Set(["lb", "pound", "lb.", "lbs", "pounds", "lbs."]),
         system: "imperial",
         type: "weight",
         baseValue: new Big(453.592),
@@ -59,7 +59,7 @@ export const MEASUREMENT_UNITS = {
     // (BASE_UNITS.WEIGHT)
     g: {
         label: "g",
-        aliases: ["g", "gram", "g.", "grams"],
+        aliases: new Set(["g", "gram", "g.", "grams"]),
         system: "metric",
         type: "weight",
         baseValue: new Big(1),
@@ -114,15 +114,15 @@ export class Measurement {
  * @returns Associated measurement unit if identifiable. Otherwise, returns null.
  */
 export function getUnitData(str: string): MeasurementUnitData | undefined {
-    const measurementUnit: MeasurementUnitData | undefined = (
+    const measurementUnitData: MeasurementUnitData | undefined = (
         MEASUREMENT_UNITS as Record<string, MeasurementUnitData>
     )[str]
         ? (MEASUREMENT_UNITS as Record<string, MeasurementUnitData>)[str]
         : Object.values(MEASUREMENT_UNITS).find((measurementUnit) => {
-              measurementUnit.aliases.some((alias) => alias === str);
+              measurementUnit.aliases.has(str);
           });
 
-    return measurementUnit;
+    return measurementUnitData;
 }
 
 /**

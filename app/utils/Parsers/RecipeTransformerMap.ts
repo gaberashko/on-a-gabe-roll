@@ -17,7 +17,7 @@
 //   prepTimeOriginalFormat: transformToString,
 //   totalTimeOriginalFormat: transformToString,
 //   recipeYield: transformToString,
-//   recipeIngredients: transformIngredients,
+//   recipeIngredients: transformToIngredients,
 //   recipeInstructions: transformInstructions, // could be an array howtosteps - each has text with string
 //   recipeCategories: transformToList, // array
 //   recipeCuisines: transformToList, // array
