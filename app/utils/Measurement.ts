@@ -1,10 +1,10 @@
 import Big from "big.js";
 
-export const BASE_UNITS = { VOLUME: "ml", WEIGHT: "g" } as const;
+export const BASE_UNITS = { VOLUME: "ml", WEIGHT: "g", QUANTITY: "pcs" } as const;
 
 interface MeasurementUnitData {
     label: string;
-    aliases: ReadonlySet<string>;
+    aliases?: ReadonlySet<string>;
     system: "metric" | "imperial" | "neutral";
     type: "volume" | "weight" | "count";
     baseValue: Big;
@@ -62,6 +62,14 @@ export const MEASUREMENT_UNITS = {
         aliases: new Set(["g", "gram", "g.", "grams"]),
         system: "metric",
         type: "weight",
+        baseValue: new Big(1),
+    },
+    // Quantity units (BASE_UNITS.QUANTITY)
+    pcs: {
+        label: "pcs",
+        aliases: new Set(["pcs", "piece", "pieces", "count", "whole", "individual"]),
+        system: "neutral",
+        type: "count",
         baseValue: new Big(1),
     },
 } as const satisfies Record<string, MeasurementUnitData>;
