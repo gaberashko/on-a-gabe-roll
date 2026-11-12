@@ -8,7 +8,7 @@ export default function transformToIngredients(ingredients: string[]): Ingredien
  *
  * @param str {string} - Ingredient string to be processed
  */
-function parseIngredient(str: string): Ingredient {
+export function parseIngredient(str: string): Ingredient {
     let primaryQuantity = 0;
     let primaryUnit = "";
     let acc = 0;

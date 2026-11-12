@@ -6,11 +6,21 @@ import { MEASUREMENT_UNITS } from "../Measurement";
  * @param token - The string to be sanitized
  * @returns The sanitized string token
  */
-export function sanitizeWord(token: string): string{
+export function sanitizeWord(token: string): string {
     return token
         .toLowerCase()
         .replace(/[.,()]g/, "")
         .trim();
+}
+
+/**
+ * Filters out all non-alphanumeric characters (including spaces) in a string.
+ *
+ * @param str - The string argument to be filtered
+ * @returns The alphanumerically-normalized string
+ */
+export function toAlphaString(str: string): string {
+    return str.toLowerCase().replace(/[^a-z]/g, "");
 }
 
 /**
