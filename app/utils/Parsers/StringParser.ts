@@ -14,10 +14,10 @@ export function sanitizeWord(token: string): string {
 }
 
 /**
- * Filters out all non-alphanumeric characters (including spaces) in a string.
+ * Filters out all non-alpha characters (including spaces) in a string. Allows for matching of "0.5 cup of milk" and "1/2 cup of milk"
  *
- * @param str - The string argument to be filtered
- * @returns The alphanumerically-normalized string
+ * @param str - The string argument to be alpha-normalized
+ * @returns The alpha-normalized string
  */
 export function toAlphaString(str: string): string {
     return str.toLowerCase().replace(/[^a-z]/g, "");

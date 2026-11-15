@@ -3,105 +3,112 @@ import { toAlphaString } from "./Parsers/StringParser";
 import { parseIngredient } from "./Parsers/IngredientsParser";
 import type { SectionalIngredients, SectionalInstructions } from "./types";
 
+const DEFAULT_HEADER = "Main Preparation";
+
 interface FlattenedDOMNode {
-    index: number;
-    tagName: string;
-    rawText: string;
     alphaOnlyText: string;
-    isHeading: boolean;
-    isCandidateItem: boolean;
+    header: string;
+    rawLength: number;
+    isListItem: boolean;
 }
 
-// TODO: fill javadocs for function headers
+function isStructuralHeading($el: cheerio.Cheerio<any>, tagName: string, rawText: string): boolean {
+    if (!rawText) return false;
+
+    if (/^h[1-6]$/.test(tagName)) {
+        return true;
+    }
+
+    if (tagName === "p") {
+        const boldText = $el.find("strong, b").text().trim();
+        return boldText.length > 0 && boldText === rawText;
+    }
+
+    return false;
+}
+
 /**
  *
  * @param $
- * @param textContent
  * @returns
  */
-function findClosestPrecedingHeader($: cheerio.CheerioAPI, textContent: string): string {
-    let matchedHeader = ""; // Default fallback if no headers found
-    const cleanJSONText = toAlphaString(textContent);
-
-    if (!cleanJSONText) return matchedHeader;
-
-    let target: cheerio.Cheerio<any> | null = null;
-
-    $("li, p, div").each((_, el) => {
-        const cleanDOMText = toAlphaString($(el).text());
-
-        if (
-            cleanDOMText &&
-            (cleanDOMText.includes(cleanJSONText) || cleanJSONText.includes(cleanDOMText))
-        ) {
-            if (!target || $(el).is("li")) {
-                target = $(el);
-            }
-        }
-    });
-
-    if (!target) return matchedHeader;
-
-    // We have a target element to begin preceding traversal from
-    const allTextElements = $("h1, h2, h3, h4, h5, p, strong, b, li, p, div");
-
-    const targetIndex = allTextElements.index(target);
-
-    // Step backwards in doc flow order
-    for (let i = targetIndex - 1; i >= 0; --i) {
-        const curElement = $(allTextElements[i]);
-        const tagName = curElement.prop("tagName")?.toLowerCase() || "";
-
-        if (
-            ["h1", "h2", "h3", "h4", "h5"].includes(tagName) ||
-            (tagName === "p" && curElement.find("strong, b").length > 0) ||
-            curElement.is("strong, b")
-        ) {
-            const headerText = curElement.text().trim().replace(/:$/, "");
-
-            if (
-                headerText &&
-                !["ingredients", "directions", "instructions", "method", "preparation"].includes(
-                    headerText.toLowerCase(),
-                )
-            ) {
-                matchedHeader = headerText;
-                break;
-            }
-        }
-    }
-    return matchedHeader;
-}
-
 function buildCachedDomList($: cheerio.CheerioAPI): FlattenedDOMNode[] {
     const cachedNodes: FlattenedDOMNode[] = [];
     const allElements = $("h1, h2, h3, h4, h5, h6, p, li, strong, b, div");
+    let activeHeader = DEFAULT_HEADER;
 
     allElements.each((index, el) => {
         const $el = $(el);
         const tagName = $el.prop("tagName")?.toLowerCase() || "";
+
+        // Ignore obvious <div> wrapper elements and prevent container overmatching
+        if (
+            tagName === "div" &&
+            $el.find("p, li, div, ul, ol, h1, h2, h3, h4, h5, h6").length > 0
+        ) {
+            return;
+        }
+
         const rawText = $el.text().trim();
+        if (!rawText) return;
+
+        if (isStructuralHeading($el, tagName, rawText)) {
+            activeHeader = rawText.replace(/:$/, "") || activeHeader;
+            return;
+        }
+
         const alphaOnlyText = toAlphaString(rawText);
-
-        if (!alphaOnlyText) return;
-
-        const isHeading =
-        const 
-
-        cachedNodes.push({
-            index,
-            tagName,
-            rawText,
-            alphaOnlyText,
-            isHeading,
-            isCandidateItem
-        })
+        if (alphaOnlyText) {
+            cachedNodes.push({
+                alphaOnlyText,
+                header: activeHeader,
+                isListItem: tagName === "li",
+                rawLength: rawText.length,
+            });
+        }
     });
 
     return cachedNodes;
 }
 
-function findHeader
+function findHeaderWithCursor(
+    jsonText: string,
+    cachedNodes: FlattenedDOMNode[],
+    cursorState: { nextIndex: number },
+): string {
+    const targetAlpha = toAlphaString(jsonText);
+    if (!targetAlpha) return DEFAULT_HEADER;
+
+    let bestMatchIndex = -1;
+    let shortestLength = Infinity;
+    let matchedNode: FlattenedDOMNode | null = null;
+
+    for (let i = cursorState.nextIndex; i < cachedNodes.length; ++i) {
+        const node = cachedNodes[i] as FlattenedDOMNode;
+
+        const isMatch =
+            node.alphaOnlyText.includes(targetAlpha) || targetAlpha.includes(node.alphaOnlyText);
+
+        if (isMatch) {
+            const effectiveLength = node.rawLength;
+            if (effectiveLength < shortestLength) {
+                shortestLength = effectiveLength;
+                bestMatchIndex = i;
+            }
+            // TODO: address the arbitrary '40' character limit uncertainty we allow
+            if (node.isListItem || node.rawLength < jsonText.length + 40) {
+                break;
+            }
+        }
+    }
+
+    if (bestMatchIndex === -1) return DEFAULT_HEADER;
+
+    // Move the cursor so the next ingredient searches the next node.
+    cursorState.nextIndex = bestMatchIndex + 1;
+
+    return cachedNodes[bestMatchIndex]?.header || DEFAULT_HEADER;
+}
 
 /**
  *
@@ -119,34 +126,41 @@ function buildSectionalRecipe(
     const sectionalIngredients: Record<string, any[]> = {};
     const sectionalInstructions: Record<string, string[]> = {};
 
+    const ingredientCursor = { nextIndex: 0 };
+    const instructionCursor = { nextIndex: 0 };
+
     // Cluster ingredients dynamically by locating their preceding DOM header
     flatIngredients.forEach((line) => {
         const cleanLine = line.trim();
-        if (!cleanLine) continue;
-        // TODO: address this bottleneck below V
-        // This is a bottleneck. We likely don't need to keep backtracking the DOM until we reach certain markers
-        const sectionTitle = findClosestPrecedingHeader($, cleanLine);
-        const parsedRow = parseIngredient(cleanLine);
+        if (cleanLine) {
+            const sectionTitle = findHeaderWithCursor(cleanLine, cachedNodes, ingredientCursor);
+            const parsedRow = parseIngredient(cleanLine);
 
-        if (!sectionalIngredients[sectionTitle]) {
-            sectionalIngredients[sectionTitle] = [];
+            if (!sectionalIngredients[sectionTitle]) {
+                sectionalIngredients[sectionTitle] = [];
+            }
+            sectionalIngredients[sectionTitle]?.push(parsedRow);
         }
-        sectionalIngredients[sectionTitle]?.push(parsedRow);
     });
 
     flatInstructions.forEach((line) => {
         const cleanLine = line.trim();
-        if (!cleanLine) continue;
 
-        const sectionTitle = findClosestPrecedingHeader($, cleanLine);
-        if (!sectionalInstructions[sectionTitle]) {
-            sectionalInstructions[sectionTitle] = [];
+        if (cleanLine) {
+            const sectionTitle = findHeaderWithCursor(cleanLine, cachedNodes, instructionCursor);
+            if (!sectionalInstructions[sectionTitle]) {
+                sectionalInstructions[sectionTitle] = [];
+            }
+            sectionalInstructions[sectionTitle].push(cleanLine);
         }
-        sectionalInstructions[sectionTitle].push(cleanLine);
-    })
+    });
 
     return {
-        sectionalIngredients:,
-        sectionalInstructions:
-    }
+        sectionalIngredients: Object.entries(sectionalIngredients).map(
+            ([sectionTitle, ingredients]) => ({ sectionTitle, ingredients }),
+        ),
+        sectionalInstructions: Object.entries(sectionalInstructions).map(
+            ([sectionTitle, steps]) => ({ sectionTitle, steps }),
+        ),
+    };
 }
