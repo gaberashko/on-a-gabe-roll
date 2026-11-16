@@ -1,8 +1,9 @@
 import _ from "lodash";
 import Big from "big.js";
 import type { RecipeJSON } from "~/services/recipe-data-scraper";
-import { type MeasurementUnit, Measurement } from "./Measurement";
 import type { Ingredient } from "./Ingredient";
+import type { SectionalRecipeData, SectionalInstructions } from "./types";
+import { type MeasurementUnit, Measurement } from "./Measurement";
 
 export const RECIPE_TAGS = {
     // Courses
@@ -22,49 +23,53 @@ export const RECIPE_TAGS = {
 
 export type RecipeTag = keyof typeof RECIPE_TAGS;
 
-// TODO: Consider if we use this or recipe-data-scraper object
-export interface RecipeData {
-    recipeId: any;
-    title: string;
-    servings: number;
-    ingredients: { name: string; quantity: number; unit: string }[];
-    cookTime?: any;
-    prepTime?: any;
-    totalTime?: any;
-}
-
 export class Recipe {
-    private displayImage?: ImageData = new ImageData(1, 1);
+    private displayImage?: string | ImageData;
     private recipeTags?: RecipeTag[];
     private measurementAdjustable?: boolean;
-    private baseServings: number;
-    private baseIngredients: Ingredient[];
+    private readonly baseServings: number;
+    private readonly baseIngredientSections: IngredientSection[];
+    private readonly instructionSections: SectionalInstructions[];
 
-    private recipeId: any;
+    private recipeId: string;
     private servingCount: number;
-    private cookTime: any;
-    private prepTime: any;
-    private totalTime: any;
+    private cookTime?: any;
+    private prepTime?: any;
+    private totalTime?: any;
     private ingredients: Ingredient[] = [];
     private totalPrice: Big = new Big(0);
 
-    constructor(data: RecipeData) {
+    constructor(
+        data: SectionalRecipeData & {
+            imageUrl?: string;
+            cookTime?: any;
+            prepTime?: any;
+            totalTime?: any;
+        },
+    ) {
+        this.recipeId = data.recipeId;
+        this.title = data.title;
+        this.displayImage = data.imageUrl;
         this.cookTime = data.cookTime;
         this.prepTime = data.prepTime;
         this.totalTime = data.totalTime;
 
-        this.baseServings = this.servingCount = data.servings;
-        this.baseIngredients = this.ingredients = data.ingredients.map((ingredient) => ({
-            name: ingredient.name,
-            measurement: new Measurement(
-                new Big(ingredient.quantity),
-                ingredient.unit as MeasurementUnit,
-            ),
-        }));
-        this.baseIngredients.forEach((ingredient) => {
-            this.totalPrice = this.totalPrice.plus(_.get(ingredient, "price", new Big(0)));
-        });
-    }
+        this.baseServings = this.servingCount = data.servings > 0 ? data.servings : 1;
+        this.baseIngredientSections = data.sectionalIngredients.map((section) => ({
+            sectionTitle: section.sectionTitle,
+            ingredients: section.ingredients.map((ingredient) => {
+                const ingredientObj: Ingredient = {
+                    name: ingredient.name,
+                    measurement: new Measurement(
+                        new Big(ingredient.quantity),
+                        ingredient.unit as MeasurementUnit
+                    )
+                };
+                this.totalPrice = this.totalPrice.plus(_.get(ingredientObj, "price", new Big(0)));
+
+                return ingredientObj;
+            })
+    }))
 
     /**
      * Utility function to increment servings by a step (e.g. +1, -1)
