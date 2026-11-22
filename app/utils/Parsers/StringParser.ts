@@ -31,7 +31,6 @@ export function toAlphaString(str: string): string {
  */
 export function findUnitKey(token: string): string | null {
     const normalized = sanitizeWord(token);
-
     const matchedKey = Object.keys(MEASUREMENT_UNITS).find((key) => {
         const measurementInfo = (MEASUREMENT_UNITS as any)[key];
         return key === normalized || measurementInfo?.aliases.has(normalized);

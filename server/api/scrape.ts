@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     // TODO: Uncomment when done testing
     try {
         const recipeData = await recipeDataScraper(url);
-        console.log("Recipe data:", recipeData);
+        // console.log("Recipe data:", recipeData);
 
         return { success: true, data: recipeData };
     } catch (error: any) {

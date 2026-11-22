@@ -26,13 +26,17 @@ const FRACTION_MAP = {
  * @returns Float value represented by token. Returns 0 if unable to parse.
  */
 export function parseNumericToken(token: string): number {
+    let normalizedNumericToken = fractionUnicodeToDecimal(token);
+    console.log("number token?:", token, "normalized:", normalizedNumericToken);
     // Matches standard decimal number representations (e.g. 2, 1.50, 0.25)
-    if (/^\d+(\.\d+)?$/.test(token)) {
-        return parseFloat(token);
+    if (/^\d+(\.\d+)?$/.test(normalizedNumericToken)) {
+        return parseFloat(normalizedNumericToken);
     }
     // Matches fracitonal number representation (e.g. 1/2)
-    if (/^\d+\/\d+$/.test(token)) {
-        const [numerator = "", denominator = ""] = token.split("/");
+    if (/^\d+\/\d+$/.test(normalizedNumericToken)) {
+        console.log("fractional thing found");
+        const [numerator = "", denominator = ""] = normalizedNumericToken.split("/");
+        console.log("numerator:", numerator, "denom:", denominator);
         return parseFloat(numerator) / parseFloat(denominator);
     }
 
@@ -46,9 +50,9 @@ export function parseNumericToken(token: string): number {
  * @returns A copy of str with unicode fractions as numeric decimal representations
  */
 export function fractionUnicodeToDecimal(str: string): string {
-    let convertedString = "";
+    let convertedString = str;
     for (const [key, value] of Object.entries(FRACTION_MAP)) {
-        convertedString = str.replace(key, value.toString());
+        convertedString = convertedString.replace(key, value.toString());
     }
 
     return convertedString;

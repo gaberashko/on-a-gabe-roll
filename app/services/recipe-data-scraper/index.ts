@@ -1,13 +1,16 @@
 import axios from "axios";
 import { load } from "cheerio";
+import _ from "lodash";
 import MicrodataScraper from "./scrapers/MicrodataScraper";
 import JsonLdScraper from "./scrapers/JsonLdScraper";
 import logger from "./utils/logger";
 import type { ScrapingOptions, RecipeJSONWithUrl } from "./types";
 
+import { buildSectionalRecipe } from "@/utils/proximityScraper";
+
 const errorMessage: string = "Could not find recipe data";
 
-export default async (url: string, options: ScrapingOptions = {}): Promise<RecipeJSONWithUrl> => {
+export default async (url: string, options: ScrapingOptions = {}): Promise<any> => {
     const { printToConsole } = options;
 
     let chtml;
@@ -38,6 +41,31 @@ export default async (url: string, options: ScrapingOptions = {}): Promise<Recip
         throw new Error(errorMessage);
     }
 
+    const formatToSectionalData = (recipe: any) => {
+        const { sectionalIngredients, sectionalInstructions } = buildSectionalRecipe(
+            _.get(recipe, "recipeIngredients", []),
+            _.get(recipe, "recipeInstructions", []),
+            chtml,
+        );
+
+        const parsedServings = parseInt(
+            String(_.get(recipe, "recipeYield", "1")).match(/\d+/)?.[0] || "1",
+            10,
+        );
+
+        return {
+            recipeId: url,
+            title: _.get(recipe, "name", "Title not found"),
+            servings: parsedServings,
+            sectionalIngredients,
+            sectionalInstructions,
+            cookTime: _.get(recipe, "cookTime", "Not found"),
+            prepTime: _.get(recipe, "prepTime", "Not found"),
+            totalTime: _.get(recipe, "totalTime", "Not found"),
+            image: _.get(recipe, "image", ""),
+        };
+    };
+
     try {
         // attempt to find JsonLd data, return recipe or log and continue
         const jsonLdScraper = new JsonLdScraper(chtml);
@@ -47,7 +75,8 @@ export default async (url: string, options: ScrapingOptions = {}): Promise<Recip
             jsonLdScraper.print();
         }
 
-        return { ...recipe, url };
+        // return { ...recipe, url };
+        return formatToSectionalData(recipe);
     } catch (error: unknown) {
         logger("JsonLdScraper failed", { ...(error as object), url });
     }
@@ -61,7 +90,8 @@ export default async (url: string, options: ScrapingOptions = {}): Promise<Recip
             // microdataScraper.print();
         }
 
-        return { ...recipe, url };
+        // return { ...recipe, url };
+        return formatToSectionalData(recipe);
     } catch (error: unknown) {
         logger("MicrodataScraper failed", { ...(error as object), url });
     }

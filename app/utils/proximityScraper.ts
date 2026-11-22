@@ -116,12 +116,14 @@ function findHeaderWithCursor(
  * @param flatInstructions
  * @param $
  */
-function buildSectionalRecipe(
+export function buildSectionalRecipe(
     flatIngredients: string[],
     flatInstructions: string[],
     $: cheerio.CheerioAPI,
 ) {
     const cachedNodes = buildCachedDomList($);
+
+    // console.log("cached nodes:", cachedNodes);
 
     const sectionalIngredients: Record<string, any[]> = {};
     const sectionalInstructions: Record<string, string[]> = {};
@@ -129,11 +131,14 @@ function buildSectionalRecipe(
     const ingredientCursor = { nextIndex: 0 };
     const instructionCursor = { nextIndex: 0 };
 
-    // Cluster ingredients dynamically by locating their preceding DOM header
+    // Cluster ingredients dynamically by locating their associated DOM header from cached nodes.
     flatIngredients.forEach((line) => {
         const cleanLine = line.trim();
+        // console.log('clean line:', cleanLine)
         if (cleanLine) {
+            // console.log('ingredientCursor:', ingredientCursor)
             const sectionTitle = findHeaderWithCursor(cleanLine, cachedNodes, ingredientCursor);
+            // console.log('sectionTitle:', sectionTitle)
             const parsedRow = parseIngredient(cleanLine);
 
             if (!sectionalIngredients[sectionTitle]) {

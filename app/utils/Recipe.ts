@@ -28,14 +28,15 @@ export class Recipe {
     private recipeTags?: RecipeTag[];
     private measurementAdjustable?: boolean;
     private readonly baseServings: number;
-    private readonly baseIngredientSections: IngredientSection[];
+    private readonly baseIngredientSections: { sectionTitle: string; ingredients: Ingredient[] }[];
     private readonly instructionSections: SectionalInstructions[];
 
     private recipeId: string;
     private servingCount: number;
-    private cookTime?: any;
-    private prepTime?: any;
-    private totalTime?: any;
+    public readonly title: string;
+    public readonly cookTime?: any;
+    public readonly prepTime?: any;
+    public readonly totalTime?: any;
     private ingredients: Ingredient[] = [];
     private totalPrice: Big = new Big(0);
 
@@ -62,14 +63,16 @@ export class Recipe {
                     name: ingredient.name,
                     measurement: new Measurement(
                         new Big(ingredient.quantity),
-                        ingredient.unit as MeasurementUnit
-                    )
+                        ingredient.unit as MeasurementUnit,
+                    ),
                 };
                 this.totalPrice = this.totalPrice.plus(_.get(ingredientObj, "price", new Big(0)));
 
                 return ingredientObj;
-            })
-    }))
+            }),
+        }));
+        this.instructionSections = data.sectionalInstructions;
+    }
 
     /**
      * Utility function to increment servings by a step (e.g. +1, -1)

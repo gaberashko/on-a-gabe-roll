@@ -1,26 +1,26 @@
-import { parseNumericToken, fractionUnicodeToDecimal } from "./NumericTokenParser";
+import { parseNumericToken } from "./NumericTokenParser";
 import { findUnitKey, sanitizeWord } from "./StringParser";
 import { MEASUREMENT_UNITS } from "../Measurement";
-
-export default function transformToIngredients(ingredients: string[]): Ingredient[] {}
 
 /**
  *
  * @param str {string} - Ingredient string to be processed
  */
-export function parseIngredient(str: string): Ingredient {
+export function parseIngredient(str: string): { name: string; quantity: number; unit: string } {
     let primaryQuantity = 0;
     let primaryUnit = "";
     let acc = 0;
     const leftoverTokens: string[] = [];
 
     let potentialConnector = false;
-
-    const tokens = str.split(/\+s/);
+    console.log("str:", str);
+    const tokens = str.split(/\s+/);
+    console.log("tokens:", tokens);
 
     for (const token of tokens) {
         const numValue = parseNumericToken(token);
         const unitKey = findUnitKey(token);
+        console.log("token:", token, "unitKey found:", unitKey, "num found:", numValue);
 
         if (numValue > 0) {
             acc += numValue;
@@ -54,8 +54,5 @@ export function parseIngredient(str: string): Ingredient {
     }
     const ingredientName = leftoverTokens.join(" ");
 
-    return {
-        name: ingredientName,
-        measurement: 
-    }
+    return { name: ingredientName, quantity: primaryQuantity, unit: primaryUnit };
 }
