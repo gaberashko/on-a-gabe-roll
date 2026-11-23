@@ -21,7 +21,7 @@ export const MEASUREMENT_UNITS = {
     },
     tbsp: {
         label: "tbsp",
-        aliases: new Set(["tbsp", "tablespoon", "tbsp.", "tbsps", "tablespoons", "tsps."]),
+        aliases: new Set(["tbsp", "tablespoon", "tbsp.", "tbsps", "tablespoons", "tbsps."]),
         system: "imperial",
         type: "volume",
         baseValue: new Big(14.7868),
@@ -55,6 +55,13 @@ export const MEASUREMENT_UNITS = {
         system: "imperial",
         type: "weight",
         baseValue: new Big(453.592),
+    },
+    oz: {
+        label: "oz",
+        aliases: new Set(["oz", "ounce", "oz.", "ounces", "ozs", "ozs."]),
+        system: "imperial",
+        type: "weight",
+        baseValue: new Big(28.3495),
     },
     // (BASE_UNITS.WEIGHT)
     g: {
